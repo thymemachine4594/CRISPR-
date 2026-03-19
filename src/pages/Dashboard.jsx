@@ -7,7 +7,7 @@ export default function Dashboard() {
 
   return (
     <div className="page-center">
-      <h1>Hey {user?.name} 👋</h1>
+      <h1>Hey {user?.name} </h1>
 
       <p>
         CRISPR is a revolutionary gene editing technology enabling

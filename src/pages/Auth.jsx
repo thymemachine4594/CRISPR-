@@ -11,10 +11,35 @@ export default function Auth() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = () => {
-    login({ name: name || "Researcher", email })
+  const handleSubmit = async () => {
+  const url = isNew
+    ? "http://localhost:5000/api/auth/register"
+    : "http://localhost:5000/api/auth/login"
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name, email, password })
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      alert(data.error)
+      return
+    }
+
+    login(data.user || { name, email })
     navigate("/dashboard")
+
+  } catch (err) {
+    console.error(err)
+    alert("Server error")
   }
+}
 
   return (
     <div className="auth-box">
