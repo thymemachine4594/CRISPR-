@@ -1,16 +1,40 @@
-import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { CircularResult, CrisprRecommendation } from "../components/CircularResult"
 import DNAHelix from "../components/DNAHelix"
+import { useDiagnosis } from "../context/DiagnosisContext"
+
+// Chart colours for each disease
+const DISEASE_COLOURS = {
+  "Sickle Cell Anemia": "#ef4444",
+  "Beta Thalassemia": "#3b82f6",
+  "ATTR": "#f59e0b",
+  "LCA": "#a78bfa",
+}
 
 export default function Result() {
-  const [resultData] = useState({
-    diseases: [
-      { name: "Sickle Cell Disease", value: 45, color: "#ef4444" },
-      { name: "Beta Thalassemia", value: 30, color: "#3b82f6" },
-      { name: "Cystic Fibrosis", value: 25, color: "#f59e0b" },
-    ],
-    crisprRecommendation: 78,
-  })
+  const navigate = useNavigate()
+  const { diagnosisResult } = useDiagnosis()
+
+  // Guard: if user navigated here directly without completing the questionnaire
+  if (!diagnosisResult) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "20px" }}>
+        <p style={{ color: "#fff", fontSize: "20px" }}>No assessment data found.</p>
+        <button className="glow-btn" onClick={() => navigate("/diagnosis/1")}>
+          Start Assessment
+        </button>
+      </div>
+    )
+  }
+
+  const { topDisease, percentages } = diagnosisResult
+
+  // Build array for CircularResult chart (all four diseases with live percentages)
+  const chartData = Object.entries(percentages).map(([name, value]) => ({
+    name,
+    value,
+    color: DISEASE_COLOURS[name] ?? "#6b7280",
+  }))
 
   return (
     <div
@@ -22,11 +46,10 @@ export default function Result() {
         alignItems: "center",
         position: "relative",
         overflow: "hidden",
-        
         padding: "30px",
       }}
     >
-      {/* DNA background - absolute so it doesn't affect layout */}
+      {/* DNA background */}
       <div
         style={{
           position: "absolute",
@@ -39,7 +62,7 @@ export default function Result() {
         <DNAHelix />
       </div>
 
-      {/* Centered result card */}
+      {/* Result card */}
       <div
         style={{
           position: "relative",
@@ -58,12 +81,48 @@ export default function Result() {
           style={{
             color: "#fff",
             textAlign: "center",
-            marginBottom: "30px",
+            marginBottom: "12px",
             fontSize: "28px",
           }}
         >
-          Genetic Diagnosis & CRISPR Recommendation
+          Genetic Diagnosis &amp; CRISPR Recommendation
         </h2>
+
+        {/* Suspicion label */}
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          {topDisease ? (
+            <p
+              style={{
+                fontSize: "22px",
+                fontWeight: "700",
+                color: DISEASE_COLOURS[topDisease] ?? "#fff",
+                background: "rgba(255,255,255,0.06)",
+                display: "inline-block",
+                padding: "10px 24px",
+                borderRadius: "12px",
+                border: `1px solid ${DISEASE_COLOURS[topDisease] ?? "#fff"}44`,
+              }}
+            >
+              In suspicion of{" "}
+              <span style={{ textDecoration: "underline" }}>{topDisease}</span>
+            </p>
+          ) : (
+            <p
+              style={{
+                fontSize: "20px",
+                fontWeight: "600",
+                color: "#94a3b8",
+                background: "rgba(255,255,255,0.06)",
+                display: "inline-block",
+                padding: "10px 24px",
+                borderRadius: "12px",
+                border: "1px solid rgba(148,163,184,0.3)",
+              }}
+            >
+              We recommend seeing a doctor
+            </p>
+          )}
+        </div>
 
         <div
           style={{
@@ -75,7 +134,7 @@ export default function Result() {
             alignItems: "center",
           }}
         >
-          {/* LEFT SIDE */}
+          {/* LEFT — disease probability chart */}
           <div
             style={{
               background: "rgba(255,255,255,0.03)",
@@ -84,12 +143,12 @@ export default function Result() {
             }}
           >
             <h3 style={{ color: "#fff", marginBottom: "16px" }}>
-              Possible Diseases
+              Symptom Match Scores
             </h3>
-            <CircularResult data={resultData.diseases} />
+            <CircularResult data={chartData} />
           </div>
 
-          {/* RIGHT SIDE */}
+          {/* RIGHT — CRISPR recommendation (placeholder until next task) */}
           <div
             style={{
               background: "rgba(255,255,255,0.03)",
@@ -100,10 +159,21 @@ export default function Result() {
               alignItems: "center",
             }}
           >
-            <CrisprRecommendation percentage={resultData.crisprRecommendation} />
+            <CrisprRecommendation percentage={topDisease ? 78 : 0} />
           </div>
+        </div>
+
+        {/* Restart button */}
+        <div style={{ textAlign: "center", marginTop: "28px" }}>
+          <button
+            className="glow-btn"
+            onClick={() => navigate("/diagnosis/1")}
+          >
+            Retake Assessment
+          </button>
         </div>
       </div>
     </div>
   )
 }
+
